@@ -2,8 +2,8 @@
  * Computes the positions and dimensions of items that will be rendered by the list. The output from this is utilized by viewability tracker to compute the
  * lists of visible/hidden item.
  */
-import { Dimension, LayoutProvider } from "../dependencies/LayoutProvider";
-import CustomError from "../exceptions/CustomError";
+import { Dimension, LayoutProvider } from '../dependencies/LayoutProvider';
+import CustomError from '../exceptions/CustomError';
 
 export abstract class LayoutManager {
     public getOffsetForIndex(index: number): Point {
@@ -12,8 +12,8 @@ export abstract class LayoutManager {
             return { x: layouts[index].x, y: layouts[index].y };
         } else {
             throw new CustomError({
-                message: "No layout available for index: " + index,
-                type: "LayoutUnavailableException",
+                message: 'No layout available for index: ' + index,
+                type: 'LayoutUnavailableException',
             });
         }
     }
@@ -37,7 +37,10 @@ export abstract class LayoutManager {
     public abstract overrideLayout(index: number, dim: Dimension): boolean;
 
     //Recompute layouts from given index, compute heavy stuff should be here
-    public abstract relayoutFromIndex(startIndex: number, itemCount: number): void;
+    public abstract relayoutFromIndex(
+        startIndex: number,
+        itemCount: number,
+    ): void;
 }
 
 export class WrapGridLayoutManager extends LayoutManager {
@@ -48,7 +51,12 @@ export class WrapGridLayoutManager extends LayoutManager {
     private _isHorizontal: boolean;
     private _layouts: Layout[];
 
-    constructor(layoutProvider: LayoutProvider, renderWindowSize: Dimension, isHorizontal: boolean = false, cachedLayouts?: Layout[]) {
+    constructor(
+        layoutProvider: LayoutProvider,
+        renderWindowSize: Dimension,
+        isHorizontal: boolean = false,
+        cachedLayouts?: Layout[],
+    ) {
         super();
         this._layoutProvider = layoutProvider;
         this._window = renderWindowSize;
@@ -71,8 +79,8 @@ export class WrapGridLayoutManager extends LayoutManager {
             return { x: this._layouts[index].x, y: this._layouts[index].y };
         } else {
             throw new CustomError({
-                message: "No layout available for index: " + index,
-                type: "LayoutUnavailableException",
+                message: 'No layout available for index: ' + index,
+                type: 'LayoutUnavailableException',
             });
         }
     }
@@ -119,14 +127,20 @@ export class WrapGridLayoutManager extends LayoutManager {
         for (let i = startIndex; i < itemCount; i++) {
             oldLayout = this._layouts[i];
             const layoutType = this._layoutProvider.getLayoutTypeForIndex(i);
-            if (oldLayout && oldLayout.isOverridden && oldLayout.type === layoutType) {
+            if (
+                oldLayout &&
+                oldLayout.isOverridden &&
+                oldLayout.type === layoutType
+            ) {
                 itemDim.height = oldLayout.height;
                 itemDim.width = oldLayout.width;
             } else {
                 this._layoutProvider.setComputedLayout(layoutType, itemDim, i);
             }
             this.setMaxBounds(itemDim);
-            while (!this._checkBounds(startX, startY, itemDim, this._isHorizontal)) {
+            while (
+                !this._checkBounds(startX, startY, itemDim, this._isHorizontal)
+            ) {
                 if (this._isHorizontal) {
                     startX += maxBound;
                     startY = 0;
@@ -139,11 +153,19 @@ export class WrapGridLayoutManager extends LayoutManager {
                 maxBound = 0;
             }
 
-            maxBound = this._isHorizontal ? Math.max(maxBound, itemDim.width) : Math.max(maxBound, itemDim.height);
+            maxBound = this._isHorizontal
+                ? Math.max(maxBound, itemDim.width)
+                : Math.max(maxBound, itemDim.height);
 
             //TODO: Talha creating array upfront will speed this up
             if (i > oldItemCount - 1) {
-                this._layouts.push({ x: startX, y: startY, height: itemDim.height, width: itemDim.width, type: layoutType });
+                this._layouts.push({
+                    x: startX,
+                    y: startY,
+                    height: itemDim.height,
+                    width: itemDim.width,
+                    type: layoutType,
+                });
             } else {
                 itemRect = this._layouts[i];
                 itemRect.x = startX;
@@ -200,14 +222,22 @@ export class WrapGridLayoutManager extends LayoutManager {
         return i;
     }
 
-    private _checkBounds(itemX: number, itemY: number, itemDim: Dimension, isHorizontal: boolean): boolean {
-        return isHorizontal ? (itemY + itemDim.height <= this._window.height) : (itemX + itemDim.width <= this._window.width);
+    private _checkBounds(
+        itemX: number,
+        itemY: number,
+        itemDim: Dimension,
+        isHorizontal: boolean,
+    ): boolean {
+        return isHorizontal
+            ? itemY + itemDim.height <= this._window.height
+            : itemX + itemDim.width <= this._window.width;
     }
 }
 
 export interface Layout extends Dimension, Point {
     isOverridden?: boolean;
     type: string | number;
+    columnIdx?: number; // used by masonry layout
 }
 export interface Point {
     x: number;
